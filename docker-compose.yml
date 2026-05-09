@@ -1,0 +1,7 @@
+services:
+  mpthree:
+    build: .
+    container_name: mpthree-app
+    ports:
+      - "1966:1966"
+    restart: unless-stopped
