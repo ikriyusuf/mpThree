@@ -65,17 +65,10 @@ class MusicMetadataProcessor(IMetadataProcessor):
                 # Extract artist from uploader/channel name, remove "VEVO" or "
                 # - Topic"
                 best_artist = artist or channel or uploader or "Bilinmeyen Sanatçı"
-                best_artist = best_artist.replace(
-                    "VEVO",
-                    "").replace(
-                    "VEVO",
-                    "").replace(
-                    " - Topic",
-                    "").strip()
+                best_artist = best_artist.replace("VEVO", "").replace(" - Topic", "").strip()
 
                 if best_artist.lower() in cleaned_title.lower():
-                    # If artist name is already in the song title, don't
-                    # duplicate
+                    # If artist name is already in the song title, don't duplicate
                     new_filename = cleaned_title
                 else:
                     # Construct "Artist - Title"
@@ -86,16 +79,18 @@ class MusicMetadataProcessor(IMetadataProcessor):
         if not new_filename:
             new_filename = "Bilinmeyen Şarkı"
 
-        # 3. Find the downloaded file using video ID (safer than guessing
-        # yt-dlp's title sanitization)
-        search_pattern = os.path.join(
-            output_folder, f"*{video_id}*.{audio_format}")
-        matching_files = glob.glob(search_pattern)
+        # 3. Find the downloaded file using video ID (avoiding glob bracket issues with [id])
+        target_ext = f".{audio_format}"
+        matching_files = []
+        if os.path.exists(output_folder):
+            for fname in os.listdir(output_folder):
+                if fname.endswith(target_ext) and (not video_id or video_id in fname):
+                    matching_files.append(os.path.join(output_folder, fname))
+                    break
 
         if matching_files:
             old_path = matching_files[0]
-            new_path = os.path.join(
-                output_folder, f"{new_filename}.{audio_format}")
+            new_path = os.path.join(output_folder, f"{new_filename}.{audio_format}")
 
             if old_path != new_path:
                 try:
@@ -106,3 +101,4 @@ class MusicMetadataProcessor(IMetadataProcessor):
                     print(f"Error renaming file to {new_filename}: {e}")
 
         return new_filename
+

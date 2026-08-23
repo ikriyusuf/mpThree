@@ -1,60 +1,53 @@
 # mpThree 🎵
 
-Premium, lightweight, and Dockerized YouTube to MP3 downloader with a stunning Apple-inspired interface.
+YouTube videolarını yüksek kalitede MP3'e dönüştüren, Dockerize edilmiş web uygulaması.
 
-## ✨ Features
+## ✨ Özellikler
 
-- **🚀 High-Speed Downloads**: Optimized `yt-dlp` integration with concurrent fragment downloading.
-- **📊 Real-time Progress**: Live status updates and progress bar via Server-Sent Events (SSE).
-- **🍎 Apple Aesthetic**: Authentic, minimalist Apple-style interface (Apple ID/iCloud inspired).
-- **🐳 Docker Ready**: Zero-configuration deployment using Docker and Docker Compose.
-- **🧹 Auto-Cleaning**: Intelligent metadata processing and file sanitization.
+- **⚡ Hızlı İndirme** — `yt-dlp` ile eş zamanlı parça indirme
+- **📊 Canlı İlerleme** — SSE (Server-Sent Events) ile anlık ilerleme çubuğu
+- **🏷️ Metadata Temizleme** — Otomatik başlık/sanatçı düzenleme, thumbnail gömme
+- **🐳 Docker Ready** — Tek komutla çalıştır
+- **🧹 Otomatik Temizlik** — İndirme sonrası geçici dosyalar silinir
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Python, Flask, Gunicorn
-- **Core**: yt-dlp, FFmpeg
-- **Frontend**: Vanilla JS, CSS3
-- **Deployment**: Docker, Docker Compose
+| Katman | Teknoloji |
+|---|---|
+| Backend | Python 3.12, Flask, Gunicorn (gevent worker) |
+| İndirme | yt-dlp, FFmpeg |
+| Frontend | Vanilla JS, CSS3 |
+| Deploy | Docker |
 
-## 🚀 Quick Start (Docker)
+## 🚀 Hızlı Başlangıç (Docker)
 
-Ensure you have [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed.
+[Docker](https://www.docker.com/) kurulu olduğundan emin olun.
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/yusuf/mpThree.git
-   cd mpThree
-   ```
+```bash
+# Repoyu klonla
+git clone https://github.com/ikriyusuf/mpThree.git
+cd mpThree
 
-2. **Build and start**:
-   ```bash
-   docker-compose up --build
-   ```
+# Tek container olarak çalıştır
+docker compose up --build
+```
 
-3. **Access the app**:
-   Open [http://localhost:1966](http://localhost:1966) in your browser.
+Ardından tarayıcıda [http://localhost:1966](http://localhost:1966) adresini aç.
 
-## 💻 Local Development (Windows)
+## 💻 Yerel Geliştirme
 
-If you prefer to run locally without Docker:
+FFmpeg sisteminizde PATH'e eklenmiş olmalı.
 
-1. **Install FFmpeg**: Download and add it to your PATH.
-2. **Install requirements**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. **Run the app**:
-   ```bash
-   python app.py
-   ```
+```bash
+pip install -r requirements.txt
+python app.py
+```
 
-## 📝 Configuration
+## ⚙️ Yapılandırma
 
-Settings are managed in `core/settings.py`, allowing you to adjust:
-- Audio quality (default: 192kbps)
-- Audio format (default: mp3)
-- Output folders
+`core/settings.py` üzerinden:
+- Ses kalitesi (varsayılan: 192 kbps)
+- Ses formatı (varsayılan: mp3)
 
 ---
-*Created with ❤️ for a better music experience.*
+*Made with ❤️*

@@ -3,123 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mpThree - YouTube Downloader</title>
+    <title>mpThree – YouTube MP3 Downloader</title>
+    <meta name="description" content="YouTube videolarını yüksek kaliteli MP3'e dönüştürün. Hızlı, ücretsiz ve Dockerize edilmiş.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --apple-blue: #0066cc;
-            --apple-blue-hover: #0077ed;
-            --apple-border: #d2d2d7;
-            --apple-text: #1d1d1f;
-            --apple-secondary: #6e6e73;
-            --apple-bg: #ffffff;
+            --blue: #0066cc;
+            --blue-hover: #0077ed;
+            --border: #d2d2d7;
+            --text: #1d1d1f;
+            --secondary: #6e6e73;
+            --bg: #f5f5f7;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--apple-bg);
-            color: var(--apple-text);
+            background: var(--bg);
+            color: var(--text);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             -webkit-font-smoothing: antialiased;
         }
 
         .container {
             width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            text-align: center;
+            max-width: 420px;
+            padding: 24px;
         }
 
         .card {
             background: #fff;
-            padding: 40px 32px;
-            /* Apple ID style: simple, no heavy shadow, clean border or very light shadow */
-            border: 1px solid #f2f2f2;
-            border-radius: 18px;
-            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+            padding: 44px 36px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            text-align: center;
         }
 
-        .logo {
-            font-size: 42px;
-            margin-bottom: 24px;
-            display: inline-block;
-        }
+        .logo { font-size: 44px; margin-bottom: 20px; display: inline-block; }
 
         h1 {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 600;
-            letter-spacing: -0.015em;
-            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
         }
 
-        p {
+        .subtitle {
             font-size: 14px;
-            color: var(--apple-secondary);
-            margin-bottom: 32px;
-            line-height: 1.4;
-        }
-
-        .input-wrapper {
-            margin-bottom: 16px;
-            text-align: left;
+            color: var(--secondary);
+            margin-bottom: 36px;
+            line-height: 1.5;
         }
 
         input[type="text"] {
             width: 100%;
             padding: 14px 16px;
-            background-color: #ffffff;
-            border: 1px solid var(--apple-border);
-            border-radius: 10px;
-            font-size: 16px;
-            color: var(--apple-text);
+            background: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            color: var(--text);
             outline: none;
-            transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            margin-bottom: 14px;
         }
 
         input[type="text"]:focus {
-            border-color: var(--apple-blue);
-            box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+            border-color: var(--blue);
+            box-shadow: 0 0 0 4px rgba(0,102,204,0.12);
         }
 
         button {
             width: 100%;
             padding: 14px;
-            background-color: var(--apple-blue);
-            color: #ffffff;
+            background: var(--blue);
+            color: #fff;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 15px;
             font-weight: 500;
+            font-family: inherit;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: background 0.2s, transform 0.1s;
         }
 
-        button:hover {
-            background-color: var(--apple-blue-hover);
-        }
+        button:hover:not(:disabled) { background: var(--blue-hover); }
+        button:active:not(:disabled) { transform: scale(0.98); }
+        button:disabled { background: #e5e5ea; color: #aeaeb2; cursor: not-allowed; }
 
-        button:disabled {
-            background-color: #e5e5ea;
-            color: #aeaeaf;
-            cursor: not-allowed;
-        }
-
+        /* Progress */
         #progressArea {
             display: none;
-            margin-top: 32px;
+            margin-top: 28px;
             text-align: left;
         }
 
-        .status-header {
+        .status-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -127,43 +111,57 @@
         }
 
         .status-text {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            color: var(--apple-secondary);
+            color: var(--secondary);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
         }
 
         .percent-text {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--apple-blue);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--blue);
         }
 
-        .progress-bar-container {
+        .track-bg {
             width: 100%;
             height: 4px;
-            background: #f2f2f7;
+            background: #e5e5ea;
             border-radius: 2px;
             overflow: hidden;
         }
 
-        .progress-bar-fill {
-            width: 0%;
+        .track-fill {
             height: 100%;
-            background: var(--apple-blue);
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+            background: var(--blue);
+            border-radius: 2px;
+            transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
         }
 
-        .success-msg {
+        /* Messages */
+        .msg {
             display: none;
-            margin-top: 24px;
-            padding: 12px;
-            background: #f5f5f7;
-            border-radius: 10px;
-            color: var(--apple-text);
+            margin-top: 20px;
+            padding: 12px 16px;
+            border-radius: 12px;
             font-size: 13px;
             font-weight: 500;
+            text-align: left;
+        }
+
+        .msg-success {
+            background: #f0faf0;
+            color: #1a7f3a;
+            border: 1px solid #b6e9c6;
+        }
+
+        .msg-error {
+            background: #fff0f0;
+            border: 1px solid #ffd1d1;
+            color: #d93025;
+            word-break: break-word;
         }
     </style>
 </head>
@@ -172,86 +170,124 @@
         <div class="card">
             <div class="logo">🎵</div>
             <h1>mpThree</h1>
-            <p>Favori videolarınızı yüksek kaliteli ses dosyalarına dönüştürün.</p>
-            
+            <p class="subtitle">YouTube videolarını yüksek kalitede MP3'e dönüştürün.</p>
+
             <form id="downloadForm">
-                <div class="input-wrapper">
-                    <input type="text" id="url" placeholder="YouTube bağlantısı" required>
-                </div>
+                <input type="text" id="urlInput" placeholder="YouTube bağlantısını yapıştırın…" required autocomplete="off">
                 <button type="submit" id="downloadBtn">İndir</button>
             </form>
 
             <div id="progressArea">
-                <div class="status-header">
-                    <span class="status-text" id="statusLabel">BEKLENİYOR</span>
+                <div class="status-row">
+                    <span class="status-text" id="statusLabel">BEKLENIYOR</span>
                     <span class="percent-text" id="percentLabel">0%</span>
                 </div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" id="progressBar"></div>
+                <div class="track-bg">
+                    <div class="track-fill" id="progressBar"></div>
                 </div>
             </div>
 
-            <div class="success-msg" id="successMsg">
-                Dosya hazırlanıyor, lütfen bekleyin...
-            </div>
+            <div class="msg msg-success" id="successMsg">✅ İndirme tamamlandı, dosya kaydediliyor…</div>
+            <div class="msg msg-error" id="errorMsg"></div>
         </div>
     </div>
 
     <script>
-        const form = document.getElementById('downloadForm');
-        const urlInput = document.getElementById('url');
-        const btn = document.getElementById('downloadBtn');
+        const form        = document.getElementById('downloadForm');
+        const urlInput    = document.getElementById('urlInput');
+        const btn         = document.getElementById('downloadBtn');
         const progressArea = document.getElementById('progressArea');
         const statusLabel = document.getElementById('statusLabel');
         const percentLabel = document.getElementById('percentLabel');
         const progressBar = document.getElementById('progressBar');
-        const successMsg = document.getElementById('successMsg');
+        const successMsg  = document.getElementById('successMsg');
+        const errorMsg    = document.getElementById('errorMsg');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const url = urlInput.value;
-            btn.disabled = true;
-            btn.textContent = 'Başlatılıyor';
-            
+            const url = urlInput.value.trim();
+            if (!url) return;
+
+            hideMessages();
+            setLoading(true);
+
             try {
-                const response = await fetch('/download', {
+                const res = await fetch('/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: `url=${encodeURIComponent(url)}`
                 });
-                const data = await response.json();
-                if (data.job_id) startTracking(data.job_id);
-                else { alert('Hata: ' + data.error); resetUI(); }
-            } catch (err) { alert('Bağlantı hatası.'); resetUI(); }
+                const data = await res.json();
+                if (data.job_id) {
+                    trackJob(data.job_id);
+                } else {
+                    showError(data.error || 'İndirme başlatılamadı.');
+                    setLoading(false);
+                }
+            } catch {
+                showError('Sunucuya bağlanılamadı.');
+                setLoading(false);
+            }
         });
 
-        function startTracking(jobId) {
+        function trackJob(jobId) {
             progressArea.style.display = 'block';
-            successMsg.style.display = 'none';
-            const eventSource = new EventSource(`/progress/${jobId}`);
-            
-            eventSource.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                statusLabel.textContent = data.status;
-                percentLabel.textContent = Math.round(data.progress) + '%';
-                progressBar.style.width = data.progress + '%';
-                
-                if (data.completed) {
-                    eventSource.close();
+            const es = new EventSource(`/progress/${jobId}`);
+
+            es.onmessage = (e) => {
+                const d = JSON.parse(e.data);
+                statusLabel.textContent = d.status.toUpperCase();
+                const pct = Math.min(Math.round(d.progress), 100);
+                percentLabel.textContent = pct + '%';
+                progressBar.style.width = pct + '%';
+
+                if (d.completed) {
+                    es.close();
                     successMsg.style.display = 'block';
                     urlInput.value = '';
+                    // Trigger file download
                     window.location.href = `/get-file/${jobId}`;
-                    setTimeout(resetUI, 4000);
+                    setTimeout(resetUI, 5000);
                 }
-                if (data.error) { eventSource.close(); alert(data.status); resetUI(); }
+
+                if (d.error) {
+                    es.close();
+                    showError(d.status);
+                    setLoading(false);
+                    progressArea.style.display = 'none';
+                }
+            };
+
+            es.onerror = () => {
+                es.close();
+                showError('Bağlantı kesildi. Lütfen tekrar deneyin.');
+                setLoading(false);
+                progressArea.style.display = 'none';
             };
         }
 
+        function setLoading(on) {
+            btn.disabled = on;
+            btn.textContent = on ? 'İndiriliyor…' : 'İndir';
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = '⚠️ ' + msg;
+            errorMsg.style.display = 'block';
+        }
+
+        function hideMessages() {
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+        }
+
         function resetUI() {
-            btn.disabled = false;
-            btn.textContent = 'İndir';
+            setLoading(false);
             progressArea.style.display = 'none';
             successMsg.style.display = 'none';
+            progressBar.style.width = '0%';
+            percentLabel.textContent = '0%';
+            statusLabel.textContent = 'BEKLENIYOR';
         }
     </script>
 </body>
