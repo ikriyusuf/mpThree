@@ -87,6 +87,12 @@ class MusicMetadataProcessor(IMetadataProcessor):
                 if fname.endswith(target_ext) and (not video_id or video_id in fname):
                     matching_files.append(os.path.join(output_folder, fname))
                     break
+            # Fallback if video_id not in filename
+            if not matching_files:
+                for fname in os.listdir(output_folder):
+                    if fname.endswith(target_ext):
+                        matching_files.append(os.path.join(output_folder, fname))
+                        break
 
         if matching_files:
             old_path = matching_files[0]

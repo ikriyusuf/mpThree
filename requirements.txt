@@ -3,3 +3,5 @@ Flask
 gunicorn[gevent]
 gevent
 mutagen
+imageio-ffmpeg
+nodejs-wheel-binaries

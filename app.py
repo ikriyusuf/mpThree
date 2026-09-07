@@ -84,19 +84,32 @@ def run_download(job_id: str, url: str, temp_dir: str):
         ] if os.path.exists(temp_dir) else []
 
         if downloaded_files:
+            file_path = downloaded_files[0]
+            filename = os.path.basename(file_path)
             with jobs_lock:
-                jobs[job_id]['file_path'] = downloaded_files[0]
+                jobs[job_id]['file_path'] = file_path
+                jobs[job_id]['filename'] = filename
                 jobs[job_id]['status'] = 'Tamamlandı'
                 jobs[job_id]['completed'] = True
                 jobs[job_id]['progress'] = 100
         else:
             with jobs_lock:
-                jobs[job_id]['status'] = 'Hata: Ses dosyası dönüştürülemedi'
+                jobs[job_id]['status'] = 'Ses dosyası oluşturulamadı.'
                 jobs[job_id]['error'] = True
 
     except Exception as e:
+        err_msg = str(e)
+        if "No video formats found" in err_msg or "Requested format is not available" in err_msg:
+            clean_err = "Bu video için uygun ses formatı bulunamadı."
+        elif "Private video" in err_msg or "Sign in" in err_msg:
+            clean_err = "Bu video gizli veya erişim izni gerektiriyor."
+        elif "Video unavailable" in err_msg:
+            clean_err = "Video mevcut değil veya kaldırılmış."
+        else:
+            clean_err = f"İndirme hatası: {err_msg}"
+
         with jobs_lock:
-            jobs[job_id]['status'] = f"Hata: {str(e)}"
+            jobs[job_id]['status'] = clean_err
             jobs[job_id]['error'] = True
 
 @app.route('/')
@@ -141,7 +154,8 @@ def progress(job_id):
                     "status": job['status'],
                     "progress": job['progress'],
                     "completed": job['completed'],
-                    "error": job['error']
+                    "error": job['error'],
+                    "filename": job.get('filename', '')
                 })
                 yield f"data: {data}\n\n"
                 if job['completed'] or job['error']:

@@ -3,206 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>mpThree – YouTube MP3 Downloader</title>
-    <meta name="description" content="YouTube videolarını yüksek kaliteli MP3'e dönüştürün. Hızlı, ücretsiz ve Dockerize edilmiş.">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>mpThree — YouTube MP3 Dönüştürücü</title>
+    <meta name="description" content="YouTube videolarını hızlı ve yüksek kalitede MP3'e dönüştürün. Sade, şık ve ücretsiz.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --blue: #0066cc;
-            --blue-hover: #0077ed;
-            --border: #d2d2d7;
-            --text: #1d1d1f;
-            --secondary: #6e6e73;
-            --bg: #f5f5f7;
+            --bg: #090d16;
+            --card-bg: rgba(17, 24, 39, 0.72);
+            --card-border: rgba(255, 255, 255, 0.09);
+            --accent-start: #6366f1;
+            --accent-end: #8b5cf6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --input-bg: rgba(15, 23, 42, 0.65);
+            --input-border: rgba(255, 255, 255, 0.12);
+            --radius-lg: 24px;
+            --radius-md: 14px;
+            --radius-sm: 8px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
             -webkit-font-smoothing: antialiased;
+        }
+
+        /* Ambient Glow Background */
+        .ambient-glow {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.08) 45%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(60px);
         }
 
         .container {
             width: 100%;
-            max-width: 420px;
-            padding: 24px;
+            max-width: 460px;
+            position: relative;
+            z-index: 1;
         }
 
         .card {
-            background: #fff;
-            padding: 44px 36px;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-            text-align: center;
+            background: var(--card-bg);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 40px 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
         }
 
-        .logo { font-size: 44px; margin-bottom: 20px; display: inline-block; }
+        /* Brand Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.45);
+            margin-bottom: 16px;
+        }
+
+        .logo-badge svg {
+            width: 28px;
+            height: 28px;
+            color: #ffffff;
+        }
 
         h1 {
             font-size: 26px;
-            font-weight: 600;
-            letter-spacing: -0.02em;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            color: #ffffff;
             margin-bottom: 6px;
         }
 
         .subtitle {
             font-size: 14px;
-            color: var(--secondary);
-            margin-bottom: 36px;
+            color: var(--text-muted);
+            font-weight: 400;
             line-height: 1.5;
         }
 
-        input[type="text"] {
-            width: 100%;
-            padding: 14px 16px;
-            background: #fff;
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            font-size: 15px;
-            font-family: inherit;
-            color: var(--text);
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+        /* Input Container */
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: var(--radius-md);
+            padding: 4px 6px 4px 14px;
+            transition: all 0.2s ease;
             margin-bottom: 14px;
         }
 
-        input[type="text"]:focus {
-            border-color: var(--blue);
-            box-shadow: 0 0 0 4px rgba(0,102,204,0.12);
+        .input-group:focus-within {
+            border-color: var(--accent-start);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+            background: rgba(15, 23, 42, 0.85);
         }
 
-        button {
-            width: 100%;
-            padding: 14px;
-            background: var(--blue);
-            color: #fff;
+        .input-icon {
+            display: flex;
+            align-items: center;
+            color: var(--text-muted);
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .input-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: transparent;
             border: none;
-            border-radius: 12px;
-            font-size: 15px;
+            outline: none;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text-main);
+            padding: 10px 0;
+            min-width: 0;
+        }
+
+        input[type="text"]::placeholder {
+            color: #64748b;
+        }
+
+        .btn-paste {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 9px;
+            padding: 7px 11px;
+            font-size: 12px;
             font-weight: 500;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-paste:hover {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+        }
+
+        .btn-paste svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        /* Action Buttons */
+        .btn-primary {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 13px 20px;
+            font-size: 15px;
+            font-weight: 600;
             font-family: inherit;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
         }
 
-        button:hover:not(:disabled) { background: var(--blue-hover); }
-        button:active:not(:disabled) { transform: scale(0.98); }
-        button:disabled { background: #e5e5ea; color: #aeaeb2; cursor: not-allowed; }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45);
+            filter: brightness(1.06);
+        }
 
-        /* Progress */
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Progress Section */
         #progressArea {
             display: none;
-            margin-top: 28px;
-            text-align: left;
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            animation: fadeIn 0.3s ease;
         }
 
-        .status-row {
+        .progress-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
 
-        .status-text {
-            font-size: 11px;
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
             font-weight: 600;
-            color: var(--secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
+            color: #cbd5e1;
         }
 
-        .percent-text {
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6366f1;
+            box-shadow: 0 0 10px #6366f1;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        .percent-badge {
             font-size: 13px;
-            font-weight: 600;
-            color: var(--blue);
+            font-weight: 700;
+            color: #a5b4fc;
         }
 
-        .track-bg {
+        .progress-bar-bg {
             width: 100%;
-            height: 4px;
-            background: #e5e5ea;
-            border-radius: 2px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
             overflow: hidden;
         }
 
-        .track-fill {
+        .progress-bar-fill {
             height: 100%;
             width: 0%;
-            background: var(--blue);
-            border-radius: 2px;
-            transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+            border-radius: 999px;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
         }
 
-        /* Messages */
-        .msg {
+        /* Result Card */
+        #resultArea {
             display: none;
-            margin-top: 20px;
-            padding: 12px 16px;
+            margin-top: 24px;
+            padding: 18px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: var(--radius-md);
+            animation: fadeIn 0.35s ease;
+        }
+
+        .result-track {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .result-icon {
+            width: 42px;
+            height: 42px;
             border-radius: 12px;
+            background: rgba(16, 185, 129, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #34d399;
+            flex-shrink: 0;
+        }
+
+        .result-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .result-info {
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .result-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 3px;
+        }
+
+        .result-meta {
+            font-size: 12px;
+            color: #34d399;
+            font-weight: 500;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-download-again {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #10b981;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-download-again:hover {
+            background: #059669;
+        }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px 14px;
             font-size: 13px;
             font-weight: 500;
-            text-align: left;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .msg-success {
-            background: #f0faf0;
-            color: #1a7f3a;
-            border: 1px solid #b6e9c6;
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
         }
 
-        .msg-error {
-            background: #fff0f0;
-            border: 1px solid #ffd1d1;
-            color: #d93025;
-            word-break: break-word;
+        /* Error Notification */
+        #errorArea {
+            display: none;
+            margin-top: 20px;
+            padding: 14px 16px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            color: #fca5a5;
+            display: none;
+            align-items: flex-start;
+            gap: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        #errorArea svg {
+            width: 18px;
+            height: 18px;
+            color: #ef4444;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 30px 22px;
+            }
+            h1 {
+                font-size: 23px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="logo">🎵</div>
-            <h1>mpThree</h1>
-            <p class="subtitle">YouTube videolarını yüksek kalitede MP3'e dönüştürün.</p>
+    <div class="ambient-glow"></div>
 
+    <main class="container">
+        <div class="card">
+            <!-- Header -->
+            <header class="header">
+                <div class="logo-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 18V5l12-2v13"></path>
+                        <circle cx="6" cy="18" r="3"></circle>
+                        <circle cx="18" cy="16" r="3"></circle>
+                    </svg>
+                </div>
+                <h1>mpThree</h1>
+                <p class="subtitle">YouTube videolarını yüksek kalitede MP3'e dönüştürün.</p>
+            </header>
+
+            <!-- Form -->
             <form id="downloadForm">
-                <input type="text" id="urlInput" placeholder="YouTube bağlantısını yapıştırın…" required autocomplete="off">
-                <button type="submit" id="downloadBtn">İndir</button>
+                <div class="input-group">
+                    <span class="input-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                    </span>
+                    <input type="text" id="urlInput" placeholder="YouTube linki yapıştırın…" required autocomplete="off" spellcheck="false">
+                    <button type="button" class="btn-paste" id="pasteBtn" title="Panodan yapıştır">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                        </svg>
+                        <span>Yapıştır</span>
+                    </button>
+                </div>
+
+                <button type="submit" class="btn-primary" id="downloadBtn">
+                    <span class="spinner" id="btnSpinner"></span>
+                    <span id="btnText">MP3 İndir</span>
+                </button>
             </form>
 
-            <div id="progressArea">
-                <div class="status-row">
-                    <span class="status-text" id="statusLabel">BEKLENIYOR</span>
-                    <span class="percent-text" id="percentLabel">0%</span>
+            <!-- Progress Section -->
+            <section id="progressArea" aria-live="polite">
+                <div class="progress-header">
+                    <div class="status-badge">
+                        <div class="status-dot"></div>
+                        <span id="statusLabel">BAŞLATILIYOR</span>
+                    </div>
+                    <span class="percent-badge" id="percentLabel">0%</span>
                 </div>
-                <div class="track-bg">
-                    <div class="track-fill" id="progressBar"></div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBar"></div>
                 </div>
+            </section>
+
+            <!-- Result Section -->
+            <section id="resultArea">
+                <div class="result-track">
+                    <div class="result-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <div class="result-info">
+                        <div class="result-title" id="trackTitle">Şarkı Başlığı.mp3</div>
+                        <div class="result-meta">320kbps MP3 • İndirme Başarılı</div>
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <a href="#" class="btn-download-again" id="manualDownloadLink">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Dosyayı Kaydet</span>
+                    </a>
+                    <button type="button" class="btn-reset" id="resetBtn">Yeni İndirme</button>
+                </div>
+            </section>
+
+            <!-- Error Area -->
+            <div id="errorArea">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <div id="errorText">Bir hata meydana geldi.</div>
             </div>
 
-            <div class="msg msg-success" id="successMsg">✅ İndirme tamamlandı, dosya kaydediliyor…</div>
-            <div class="msg msg-error" id="errorMsg"></div>
+            <!-- Footer -->
+            <footer class="footer">
+                <span>Docker Ready • Hızlı ve Güvenli Dönüştürücü</span>
+            </footer>
         </div>
-    </div>
+    </main>
 
     <script>
-        const form        = document.getElementById('downloadForm');
-        const urlInput    = document.getElementById('urlInput');
-        const btn         = document.getElementById('downloadBtn');
+        const form = document.getElementById('downloadForm');
+        const urlInput = document.getElementById('urlInput');
+        const pasteBtn = document.getElementById('pasteBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+
         const progressArea = document.getElementById('progressArea');
         const statusLabel = document.getElementById('statusLabel');
         const percentLabel = document.getElementById('percentLabel');
         const progressBar = document.getElementById('progressBar');
-        const successMsg  = document.getElementById('successMsg');
-        const errorMsg    = document.getElementById('errorMsg');
 
+        const resultArea = document.getElementById('resultArea');
+        const trackTitle = document.getElementById('trackTitle');
+        const manualDownloadLink = document.getElementById('manualDownloadLink');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const errorArea = document.getElementById('errorArea');
+        const errorText = document.getElementById('errorText');
+
+        let activeEventSource = null;
+
+        // Clipboard Paste Button
+        pasteBtn.addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    urlInput.value = text.trim();
+                    urlInput.focus();
+                }
+            } catch (err) {
+                // If permission denied or unsupported, simply focus
+                urlInput.focus();
+            }
+        });
+
+        // Form Submit
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const url = urlInput.value.trim();
@@ -217,78 +608,113 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: `url=${encodeURIComponent(url)}`
                 });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.error || 'İndirme başlatılamadı.');
+                }
+
                 const data = await res.json();
                 if (data.job_id) {
                     trackJob(data.job_id);
                 } else {
-                    showError(data.error || 'İndirme başlatılamadı.');
-                    setLoading(false);
+                    throw new Error(data.error || 'Geçersiz sunucu yanıtı.');
                 }
-            } catch {
-                showError('Sunucuya bağlanılamadı.');
+            } catch (err) {
+                showError(err.message || 'Sunucuya bağlanılamadı.');
                 setLoading(false);
             }
         });
 
         function trackJob(jobId) {
             progressArea.style.display = 'block';
+            statusLabel.textContent = 'BAĞLANILIYOR...';
+            percentLabel.textContent = '0%';
+            progressBar.style.width = '0%';
+
+            if (activeEventSource) {
+                activeEventSource.close();
+            }
+
             const es = new EventSource(`/progress/${jobId}`);
+            activeEventSource = es;
 
             es.onmessage = (e) => {
                 const d = JSON.parse(e.data);
-                statusLabel.textContent = d.status.toUpperCase();
-                const pct = Math.min(Math.round(d.progress), 100);
+                statusLabel.textContent = (d.status || 'İŞLENİYOR').toUpperCase();
+                const pct = Math.min(Math.round(d.progress || 0), 100);
                 percentLabel.textContent = pct + '%';
                 progressBar.style.width = pct + '%';
 
                 if (d.completed) {
                     es.close();
-                    successMsg.style.display = 'block';
-                    urlInput.value = '';
-                    // Trigger file download
-                    window.location.href = `/get-file/${jobId}`;
-                    setTimeout(resetUI, 5000);
+                    activeEventSource = null;
+                    setLoading(false);
+                    progressArea.style.display = 'none';
+
+                    // Update Result Card
+                    const songName = d.filename || 'indirilen_ses.mp3';
+                    trackTitle.textContent = songName;
+                    const downloadUrl = `/get-file/${jobId}`;
+                    manualDownloadLink.href = downloadUrl;
+                    resultArea.style.display = 'block';
+
+                    // Trigger automatic download
+                    window.location.href = downloadUrl;
                 }
 
                 if (d.error) {
                     es.close();
-                    showError(d.status);
+                    activeEventSource = null;
                     setLoading(false);
                     progressArea.style.display = 'none';
+                    showError(d.status || 'İndirme sırasında bir hata oluştu.');
                 }
             };
 
             es.onerror = () => {
                 es.close();
-                showError('Bağlantı kesildi. Lütfen tekrar deneyin.');
+                activeEventSource = null;
                 setLoading(false);
                 progressArea.style.display = 'none';
+                showError('Bağlantı kesildi. Lütfen tekrar deneyin.');
             };
         }
 
-        function setLoading(on) {
-            btn.disabled = on;
-            btn.textContent = on ? 'İndiriliyor…' : 'İndir';
+        function setLoading(isLoading) {
+            downloadBtn.disabled = isLoading;
+            urlInput.disabled = isLoading;
+            pasteBtn.disabled = isLoading;
+            btnSpinner.style.display = isLoading ? 'inline-block' : 'none';
+            btnText.textContent = isLoading ? 'İşleniyor…' : 'MP3 İndir';
         }
 
         function showError(msg) {
-            errorMsg.textContent = '⚠️ ' + msg;
-            errorMsg.style.display = 'block';
+            errorText.textContent = msg;
+            errorArea.style.display = 'flex';
         }
 
         function hideMessages() {
-            errorMsg.style.display = 'none';
-            successMsg.style.display = 'none';
+            errorArea.style.display = 'none';
+            resultArea.style.display = 'none';
+            progressArea.style.display = 'none';
         }
 
         function resetUI() {
+            if (activeEventSource) {
+                activeEventSource.close();
+                activeEventSource = null;
+            }
+            hideMessages();
             setLoading(false);
-            progressArea.style.display = 'none';
-            successMsg.style.display = 'none';
+            urlInput.value = '';
+            urlInput.focus();
             progressBar.style.width = '0%';
             percentLabel.textContent = '0%';
-            statusLabel.textContent = 'BEKLENIYOR';
+            statusLabel.textContent = 'BEKLENİYOR';
         }
+
+        resetBtn.addEventListener('click', resetUI);
     </script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 FROM python:3.12-slim
 
-# Install ffmpeg for audio conversion
+# Install ffmpeg for audio conversion and nodejs for yt-dlp JS challenges
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg && \
+    apt-get install -y --no-install-recommends ffmpeg nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
