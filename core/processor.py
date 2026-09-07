@@ -1,86 +1,136 @@
 import os
 import re
-import glob
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 from core.interfaces import IMetadataProcessor
+from mutagen.easyid3 import EasyID3
+from mutagen.mp3 import MP3
 
 
 class MusicMetadataProcessor(IMetadataProcessor):
     def _clean_string(self, text: str) -> str:
-        """Removes common YouTube suffixes like (Official Video), etc."""
+        """Removes common YouTube suffixes, prefixes, brackets and clutter."""
         if not text:
             return ""
 
-        # Remove common annoying tags from music videos
+        # Normalize unicode dashes and alternative separators
+        t = re.sub(r'[\u2010\u2012\u2013\u2014\u2015\u2212]', '-', text)
+        t = re.sub(r'\s*\|\s*', ' - ', t)
+        t = re.sub(r'\s*:\s*', ' - ', t)
+        t = re.sub(r'\s*•\s*', ' - ', t)
+        t = re.sub(r'\s*//\s*', ' - ', t)
+        t = re.sub(r'\s*~\s*', ' - ', t)
+
+        # Remove common annoying tags from music videos (case-insensitive)
         patterns = [
-            r"\[.*?official.*?\]",
-            r"\(.*?official.*?\)",
-            r"\[.*?lyric.*?\]",
-            r"\(.*?lyric.*?\)",
-            r"\[.*?audio.*?\]",
-            r"\(.*?audio.*?\)",
-            r"\[.*?music video.*?\]",
-            r"\(.*?music video.*?\)",
-            r"\[.*?visualizer.*?\]",
-            r"\(.*?visualizer.*?\)",
-            r"\[.*?video.*?\]",
-            r"\(.*?video.*?\)"
+            r'\[\s*(?:official|resmi)?\s*(?:music|video|audio|lyric|visualizer|klip|video klip|4k|hd|hq|1080p|remastered|lyrics|sözleri)?\s*(?:video|audio|klip)?\s*\]',
+            r'\(\s*(?:official|resmi)?\s*(?:music|video|audio|lyric|visualizer|klip|video klip|4k|hd|hq|1080p|remastered|lyrics|sözleri)?\s*(?:video|audio|klip)?\s*\)',
+            r'\[\s*(?:hd|hq|4k|1080p|audio|visualizer)\s*\]',
+            r'\(\s*(?:hd|hq|4k|1080p|audio|visualizer)\s*\)',
+            r'\|\s*(?:official|resmi).*$',
         ]
 
-        cleaned = text
         for p in patterns:
-            cleaned = re.sub(p, "", cleaned, flags=re.IGNORECASE)
+            t = re.sub(p, "", t, flags=re.IGNORECASE)
 
-        # Clean up multiple spaces, hyphens, etc.
-        cleaned = re.sub(r"\s+", " ", cleaned).strip()
-        cleaned = cleaned.strip("- ")
-        return cleaned
+        # Clean multiple spaces, hyphens, and whitespace
+        t = re.sub(r"\s+", " ", t).strip()
+        t = t.strip("- ")
+        return t
 
     def _sanitize_filename(self, text: str) -> str:
-        # Remove illegal filename characters
+        """Removes illegal characters for safe filenames on all OS."""
         return "".join([c for c in text if c not in '<>:"/\\|?*']).strip()
+
+    def parse_artist_title(self, info: Dict[str, Any]) -> Tuple[str, str]:
+        """
+        Extracts clean (Artist, Title) tuple from metadata and video info.
+        Guarantees format: 'Artist - Song'
+        """
+        raw_title = info.get("title", "")
+        track = info.get("track")
+        artist = info.get("artist")
+        uploader = info.get("uploader", "")
+        channel = info.get("channel", "")
+
+        cleaned_title = self._clean_string(raw_title)
+
+        # 1. Ideal scenario: Official YouTube Music metadata tags exist
+        if artist and track:
+            return self._sanitize_filename(artist.strip()), self._sanitize_filename(track.strip())
+
+        # 2. Check if cleaned video title contains " - "
+        parts = [p.strip() for p in cleaned_title.split(" - ") if p.strip()]
+
+        # Common record label / publisher names that should be stripped
+        known_labels = {
+            'netd müzik', 'netd muzik', 'vevo', 'spinnin records', 'wmg',
+            'sony music', 'universal music', 'warner music', 'avrupa müzik',
+            'poll production', 'dmc', 'grand müzik', 'sems müzik', 'ultra records'
+        }
+
+        if len(parts) >= 2:
+            if len(parts) == 2:
+                final_artist = parts[0]
+                final_title = parts[1]
+            else:
+                # 3 or more parts, e.g. "Label - Artist - Song"
+                if parts[0].lower() in known_labels:
+                    final_artist = parts[1]
+                    final_title = " - ".join(parts[2:])
+                else:
+                    final_artist = parts[0]
+                    final_title = " - ".join(parts[1:])
+        else:
+            # 3. Fallback when title does not contain " - "
+            raw_uploader = artist or channel or uploader or "Bilinmeyen Sanatçı"
+            # Strip common suffixes from channel name
+            clean_uploader = re.sub(
+                r'(VEVO| - Topic|Official|Music|Müzik|Records|Channel)',
+                '',
+                raw_uploader,
+                flags=re.IGNORECASE
+            ).strip(' -')
+
+            final_artist = clean_uploader or "Bilinmeyen Sanatçı"
+            final_title = cleaned_title
+
+        # Clean duplicate artist in title if present (e.g. "Song" after "Artist - Artist Song")
+        if final_title.lower().startswith(final_artist.lower()):
+            final_title = final_title[len(final_artist):].strip(' -:')
+
+        final_artist = self._sanitize_filename(final_artist) or "Bilinmeyen Sanatçı"
+        final_title = self._sanitize_filename(final_title) or "Bilinmeyen Şarkı"
+
+        return final_artist, final_title
+
+    def _update_id3_tags(self, file_path: str, artist: str, title: str):
+        """Updates internal ID3 metadata tags so media players display Artist and Title properly."""
+        try:
+            try:
+                audio = EasyID3(file_path)
+            except Exception:
+                audio = MP3(file_path)
+                audio.add_tags()
+                audio = EasyID3(file_path)
+            audio['artist'] = artist
+            audio['title'] = title
+            audio.save()
+        except Exception as e:
+            print(f"Notice: Could not write ID3 tags for {file_path}: {e}")
 
     def process(self, info: Dict[str, Any],
                 output_folder: str, audio_format: str) -> str:
-        """Post-download renaming based on metadata."""
-        track = info.get("track")
-        artist = info.get("artist")
-        title = info.get("title", "")
-        uploader = info.get("uploader", "")
-        channel = info.get("channel", "")
+        """
+        Post-download renaming and ID3 tagging.
+        Guarantees filename: 'Artist - Song.mp3'
+        """
+        artist, title = self.parse_artist_title(info)
+        new_filename = f"{artist} - {title}"
+        target_ext = f".{audio_format}"
+
         video_id = info.get("id", "")
 
-        # 1. Determine the best possible Clean Title & Artist
-        cleaned_title = self._clean_string(title)
-
-        if track and artist:
-            # Ideal scenario: YouTube Music metadata exists
-            new_filename = f"{artist} - {track}"
-        else:
-            # Fallback for standard YouTube videos
-            if " - " in cleaned_title:
-                # Video title already contains artist and song info
-                new_filename = cleaned_title
-            else:
-                # Extract artist from uploader/channel name, remove "VEVO" or "
-                # - Topic"
-                best_artist = artist or channel or uploader or "Bilinmeyen Sanatçı"
-                best_artist = best_artist.replace("VEVO", "").replace(" - Topic", "").strip()
-
-                if best_artist.lower() in cleaned_title.lower():
-                    # If artist name is already in the song title, don't duplicate
-                    new_filename = cleaned_title
-                else:
-                    # Construct "Artist - Title"
-                    new_filename = f"{best_artist} - {cleaned_title}"
-
-        # 2. Sanitize to final safety
-        new_filename = self._sanitize_filename(new_filename)
-        if not new_filename:
-            new_filename = "Bilinmeyen Şarkı"
-
-        # 3. Find the downloaded file using video ID (avoiding glob bracket issues with [id])
-        target_ext = f".{audio_format}"
+        # Find the downloaded file in output_folder
         matching_files = []
         if os.path.exists(output_folder):
             for fname in os.listdir(output_folder):
@@ -98,6 +148,11 @@ class MusicMetadataProcessor(IMetadataProcessor):
             old_path = matching_files[0]
             new_path = os.path.join(output_folder, f"{new_filename}.{audio_format}")
 
+            # 1. Update ID3 tags first (if audio_format is mp3)
+            if audio_format.lower() == "mp3":
+                self._update_id3_tags(old_path, artist, title)
+
+            # 2. Rename to 'Artist - Song.mp3'
             if old_path != new_path:
                 try:
                     if os.path.exists(new_path):
@@ -107,4 +162,3 @@ class MusicMetadataProcessor(IMetadataProcessor):
                     print(f"Error renaming file to {new_filename}: {e}")
 
         return new_filename
-
