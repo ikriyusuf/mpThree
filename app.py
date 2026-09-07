@@ -64,11 +64,12 @@ class JobManager:
                     jobs[job_id]['progress'] = 100
                     jobs[job_id]['status'] = 'Dönüştürülüyor...'
 
-def run_download(job_id: str, url: str, temp_dir: str):
+def run_download(job_id: str, url: str, temp_dir: str, quality: str = "320"):
     try:
         request_settings = SettingsManager()
         request_settings.set("output_folder", temp_dir)
         request_settings.set("ffmpeg_location", None)
+        request_settings.set("audio_quality", quality)
 
         downloader = YtDlpDownloader(processor=metadata_processor)
 
@@ -124,6 +125,10 @@ def start_download():
     if not url:
         return jsonify({"error": "Lütfen bir URL girin"}), 400
 
+    quality = request.form.get('quality', '320')
+    if quality not in {'128', '192', '256', '320'}:
+        quality = '320'
+
     job_id = str(uuid.uuid4())
     temp_dir = tempfile.mkdtemp(prefix="mpthree_")
 
@@ -135,11 +140,12 @@ def start_download():
             "error": False,
             "file_path": None,
             "temp_dir": temp_dir,
-            "created_at": time.time()
+            "created_at": time.time(),
+            "quality": quality
         }
 
     # Start download in a background thread
-    thread = threading.Thread(target=run_download, args=(job_id, url, temp_dir))
+    thread = threading.Thread(target=run_download, args=(job_id, url, temp_dir, quality))
     thread.start()
 
     return jsonify({"job_id": job_id})
@@ -157,7 +163,8 @@ def progress(job_id):
                     "progress": job['progress'],
                     "completed": job['completed'],
                     "error": job['error'],
-                    "filename": job.get('filename', '')
+                    "filename": job.get('filename', ''),
+                    "quality": job.get('quality', '320')
                 })
                 yield f"data: {data}\n\n"
                 if job['completed'] or job['error']:

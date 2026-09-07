@@ -190,6 +190,84 @@
             height: 13px;
         }
 
+        /* Quality Selector */
+        .quality-selector-group {
+            margin-bottom: 18px;
+        }
+
+        .quality-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            letter-spacing: 0.03em;
+        }
+
+        .quality-label #selectedQualityLabel {
+            color: #a5b4fc;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .quality-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .quality-pill {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .quality-pill input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .quality-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 4px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .quality-card .badge {
+            font-size: 10px;
+            font-weight: 500;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .quality-pill:hover .quality-card {
+            border-color: rgba(99, 102, 241, 0.4);
+            color: var(--text-main);
+        }
+
+        .quality-pill input:checked + .quality-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.2));
+            border-color: var(--accent-start);
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .quality-pill input:checked + .quality-card .badge {
+            color: #a5b4fc;
+        }
+
         /* Action Buttons */
         .btn-primary {
             width: 100%;
@@ -492,6 +570,44 @@
                     </button>
                 </div>
 
+                <!-- Quality Selector -->
+                <div class="quality-selector-group">
+                    <div class="quality-label">
+                        <span>Ses Kalitesi (Bitrate)</span>
+                        <span id="selectedQualityLabel">320 kbps (Maksimum)</span>
+                    </div>
+                    <div class="quality-options">
+                        <label class="quality-pill">
+                            <input type="radio" name="quality" value="128">
+                            <div class="quality-card">
+                                <span>128k</span>
+                                <span class="badge">Hızlı</span>
+                            </div>
+                        </label>
+                        <label class="quality-pill">
+                            <input type="radio" name="quality" value="192">
+                            <div class="quality-card">
+                                <span>192k</span>
+                                <span class="badge">Dengeli</span>
+                            </div>
+                        </label>
+                        <label class="quality-pill">
+                            <input type="radio" name="quality" value="256">
+                            <div class="quality-card">
+                                <span>256k</span>
+                                <span class="badge">Yüksek</span>
+                            </div>
+                        </label>
+                        <label class="quality-pill">
+                            <input type="radio" name="quality" value="320" checked>
+                            <div class="quality-card">
+                                <span>320k</span>
+                                <span class="badge">En İyi</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn-primary" id="downloadBtn">
                     <span class="spinner" id="btnSpinner"></span>
                     <span id="btnText">MP3 İndir</span>
@@ -523,7 +639,7 @@
                     </div>
                     <div class="result-info">
                         <div class="result-title" id="trackTitle">Şarkı Başlığı.mp3</div>
-                        <div class="result-meta">320kbps MP3 • İndirme Başarılı</div>
+                        <div class="result-meta" id="resultMeta">320kbps MP3 • İndirme Başarılı</div>
                     </div>
                 </div>
                 <div class="result-actions">
@@ -571,11 +687,30 @@
 
         const resultArea = document.getElementById('resultArea');
         const trackTitle = document.getElementById('trackTitle');
+        const resultMeta = document.getElementById('resultMeta');
         const manualDownloadLink = document.getElementById('manualDownloadLink');
         const resetBtn = document.getElementById('resetBtn');
 
         const errorArea = document.getElementById('errorArea');
         const errorText = document.getElementById('errorText');
+
+        const selectedQualityLabel = document.getElementById('selectedQualityLabel');
+        const qualityRadios = document.querySelectorAll('input[name="quality"]');
+
+        const qualityDesc = {
+            '128': '128 kbps (Hızlı / Düşük Boyut)',
+            '192': '192 kbps (Dengeli / Standart)',
+            '256': '256 kbps (Yüksek Kalite)',
+            '320': '320 kbps (Maksimum)'
+        };
+
+        qualityRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (qualityDesc[e.target.value]) {
+                    selectedQualityLabel.textContent = qualityDesc[e.target.value];
+                }
+            });
+        });
 
         let activeEventSource = null;
 
@@ -599,6 +734,8 @@
             const url = urlInput.value.trim();
             if (!url) return;
 
+            const selectedQuality = document.querySelector('input[name="quality"]:checked')?.value || '320';
+
             hideMessages();
             setLoading(true);
 
@@ -606,7 +743,7 @@
                 const res = await fetch('/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `url=${encodeURIComponent(url)}`
+                    body: `url=${encodeURIComponent(url)}&quality=${encodeURIComponent(selectedQuality)}`
                 });
 
                 if (!res.ok) {
@@ -616,7 +753,7 @@
 
                 const data = await res.json();
                 if (data.job_id) {
-                    trackJob(data.job_id);
+                    trackJob(data.job_id, selectedQuality);
                 } else {
                     throw new Error(data.error || 'Geçersiz sunucu yanıtı.');
                 }
@@ -626,7 +763,7 @@
             }
         });
 
-        function trackJob(jobId) {
+        function trackJob(jobId, chosenQuality) {
             progressArea.style.display = 'block';
             statusLabel.textContent = 'BAĞLANILIYOR...';
             percentLabel.textContent = '0%';
@@ -655,6 +792,10 @@
                     // Update Result Card
                     const songName = d.filename || 'indirilen_ses.mp3';
                     trackTitle.textContent = songName;
+                    const finalQuality = d.quality || chosenQuality || '320';
+                    if (resultMeta) {
+                        resultMeta.textContent = `${finalQuality}kbps MP3 • İndirme Başarılı`;
+                    }
                     const downloadUrl = `/get-file/${jobId}`;
                     manualDownloadLink.href = downloadUrl;
                     resultArea.style.display = 'block';
@@ -685,6 +826,7 @@
             downloadBtn.disabled = isLoading;
             urlInput.disabled = isLoading;
             pasteBtn.disabled = isLoading;
+            qualityRadios.forEach(r => r.disabled = isLoading);
             btnSpinner.style.display = isLoading ? 'inline-block' : 'none';
             btnText.textContent = isLoading ? 'İşleniyor…' : 'MP3 İndir';
         }
