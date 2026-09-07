@@ -44,3 +44,7 @@ mpthree_*/
 *.jpg
 *.png
 *.webp
+*.exe
+bin/
+ffmpeg/
+

@@ -1,41 +1,58 @@
-import yt_dlp
 import os
 import shutil
 from typing import Callable, Optional, Dict, Any
+import yt_dlp
 from core.interfaces import IDownloader, ISettings, IMetadataProcessor
 
 
 def resolve_ffmpeg_location(explicit_location: Optional[str] = None) -> Optional[str]:
-    """Resolves ffmpeg path from settings, system PATH, or imageio_ffmpeg."""
+    """
+    Resolves the directory or executable path for FFmpeg.
+    Priority order:
+    1. Explicit location passed via settings (if exists)
+    2. Local folders within project root:
+       - ffmpeg/bin/
+       - ffmpeg/
+       - bin/
+       - project root
+       - any unzipped 'ffmpeg*' subfolder
+    3. System PATH (via shutil.which("ffmpeg"))
+    """
     if explicit_location and os.path.exists(explicit_location):
         return explicit_location
+
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    is_windows = os.name == "nt"
+    target_names = ["ffmpeg.exe", "ffmpeg"] if is_windows else ["ffmpeg"]
+
+    # Candidate directories to inspect
+    candidates = [
+        os.path.join(project_root, "ffmpeg", "bin"),
+        os.path.join(project_root, "ffmpeg"),
+        os.path.join(project_root, "bin"),
+        project_root,
+    ]
+
+    # Also search for extracted folders like 'ffmpeg-*-build' in project root
+    if os.path.exists(project_root):
+        for item in os.listdir(project_root):
+            if item.lower().startswith("ffmpeg") and os.path.isdir(os.path.join(project_root, item)):
+                candidates.append(os.path.join(project_root, item, "bin"))
+                candidates.append(os.path.join(project_root, item))
+
+    # Check candidates
+    for candidate_dir in candidates:
+        if os.path.isdir(candidate_dir):
+            for binary_name in target_names:
+                binary_path = os.path.join(candidate_dir, binary_name)
+                if os.path.isfile(binary_path):
+                    return candidate_dir  # Returns directory containing ffmpeg / ffprobe
+
+    # Fallback to system PATH
     if shutil.which("ffmpeg"):
-        return None  # yt-dlp will find it in system PATH automatically
-    try:
-        import imageio_ffmpeg
-        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
-        if ffmpeg_exe and os.path.exists(ffmpeg_exe):
-            return ffmpeg_exe
-    except Exception:
-        pass
+        return None  # yt-dlp automatically locates it in system PATH
+
     return None
-
-
-def resolve_js_runtimes() -> Dict[str, Any]:
-    """Detects available JS runtime (system node/deno or nodejs_wheel package)."""
-    if shutil.which("node") or shutil.which("deno"):
-        return {}
-    try:
-        import nodejs_wheel
-        node_bin = os.path.join(
-            os.path.dirname(nodejs_wheel.__file__),
-            "node.exe" if os.name == "nt" else "node"
-        )
-        if os.path.exists(node_bin):
-            return {"node": {"path": node_bin}}
-    except Exception:
-        pass
-    return {}
 
 
 class YtDlpDownloader(IDownloader):
@@ -47,7 +64,6 @@ class YtDlpDownloader(IDownloader):
                           settings: ISettings,
                           progress_hook: Optional[Callable] = None) -> Dict[str, Any]:
         ffmpeg_loc = resolve_ffmpeg_location(settings.get("ffmpeg_location"))
-        js_runtimes = resolve_js_runtimes()
 
         opts: Dict[str, Any] = {
             "format": "bestaudio/best",
@@ -69,7 +85,6 @@ class YtDlpDownloader(IDownloader):
             "no_warnings": True,
             "nocheckcertificate": True,
             "ignoreerrors": False,
-            "remote_components": ["ejs:github"],
             "no_color": True,
             "socket_timeout": 30,
             "concurrent_fragment_downloads": 4,
@@ -77,13 +92,17 @@ class YtDlpDownloader(IDownloader):
             "noplaylist": True,
         }
 
-        if js_runtimes:
-            opts["js_runtimes"] = js_runtimes
-
         return opts
 
     def download(self, url: str, settings: ISettings,
                  progress_hook: Optional[Callable] = None):
+        ffmpeg_loc = resolve_ffmpeg_location(settings.get("ffmpeg_location"))
+        if not ffmpeg_loc and not shutil.which("ffmpeg"):
+            raise FileNotFoundError(
+                "FFmpeg bulunamadı! Lütfen FFmpeg'i indirip proje içerisindeki "
+                "'ffmpeg' veya 'bin' klasörüne yerleştirin (örn: ffmpeg/ffmpeg.exe veya bin/ffmpeg.exe)."
+            )
+
         self.is_downloading = True
         try:
             os.makedirs(settings.get("output_folder"), exist_ok=True)
@@ -105,5 +124,3 @@ class YtDlpDownloader(IDownloader):
                             info, settings.get("output_folder"), settings.get("audio_format"))
         finally:
             self.is_downloading = False
-
-

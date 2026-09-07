@@ -99,7 +99,9 @@ def run_download(job_id: str, url: str, temp_dir: str):
 
     except Exception as e:
         err_msg = str(e)
-        if "No video formats found" in err_msg or "Requested format is not available" in err_msg:
+        if "FFmpeg bulunamadı" in err_msg:
+            clean_err = err_msg
+        elif "No video formats found" in err_msg or "Requested format is not available" in err_msg:
             clean_err = "Bu video için uygun ses formatı bulunamadı."
         elif "Private video" in err_msg or "Sign in" in err_msg:
             clean_err = "Bu video gizli veya erişim izni gerektiriyor."

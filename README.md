@@ -16,12 +16,12 @@ YouTube videolarını yüksek kaliteli MP3 ses dosyalarına dönüştüren, sade
 
 ## ✨ Özellikler
 
-- **⚡ Hızlı ve Güvenilir İndirme** — Güncel `yt-dlp` motoru, EJS JavaScript challenge çözücü desteği ve otomatik istemci akışı.
+- **⚡ Hızlı ve Güvenilir İndirme** — Güncel `yt-dlp` motoru ile yüksek kaliteli ses çekme.
 - **🎨 Sade ve Şık Arayüz** — Modern karanlık tema (dark mode), cam efekti (glassmorphism), akıcı geçişler ve panodan tek tıkla yapıştırma desteği.
 - **📊 Canlı İlerleme Takibi** — SSE (Server-Sent Events) ile anlık indirme yüzdesi ve aşama bildirimi.
 - **🏷️ Otomatik Metadata & Kapak Resmi** — Şarkı ve sanatçı adını temizleme, ID3 etiketleme ve kapak resmini (thumbnail) doğrudan MP3 içine gömme.
 - **🐳 Docker Ready** — Tek komutla sıfır kurulum zahmetiyle ayağa kaldırılabilir.
-- **💻 Yerel Geliştirme Kolaylığı** — FFmpeg sisteminizde kurulu olmasa bile otomatik tespit ve fallback mekanizması.
+- **💻 Yerel Geliştirme ve Taşınabilir FFmpeg** — FFmpeg'i sistem PATH'ine eklemeden doğrudan proje içine `ffmpeg/` veya `bin/` klasörü olarak koyup anında çalıştırma desteği.
 - **🧹 Otomatik Temizlik** — İndirilen ve dönüştürülen geçici dosyalar kullanıcıya iletildikten sonra güvenle temizlenir.
 
 ---
@@ -31,7 +31,7 @@ YouTube videolarını yüksek kaliteli MP3 ses dosyalarına dönüştüren, sade
 | Alan | Teknolojiler |
 |---|---|
 | **Backend** | Python 3.12 / 3.14, Flask, Gunicorn (`gevent` worker) |
-| **İndirme Motoru** | `yt-dlp`, EJS Challenge Solvers, `imageio-ffmpeg` |
+| **İndirme Motoru** | `yt-dlp` (Saf Python) |
 | **Ses & Metadata** | FFmpeg, Mutagen |
 | **Frontend** | Vanilla JS, Modern CSS3 (Glassmorphism, CSS Variables, Responsive) |
 | **Dağıtım** | Docker, Docker Compose |
@@ -60,14 +60,17 @@ Tarayıcınızdan **[http://localhost:1966](http://localhost:1966)** adresine gi
 Docker olmadan yerel makinenizde çalıştırmak için:
 
 ```bash
-# 1. Bağımlılıkları yükleyin
+# 1. Bağımlılıkları yükleyin (yalnızca saf Python paketleri)
 pip install -r requirements.txt
 
-# 2. Uygulamayı başlatın
+# 2. FFmpeg Kurulumu / Yerel Klasör:
+# - FFmpeg sisteminizde (PATH) kurulu ise otomatik algılanır.
+# - Kurulu değilse FFmpeg'i indirip proje içerisindeki 'ffmpeg' veya 'bin' klasörüne koyabilirsiniz:
+#   Örn: mpThree/ffmpeg/ffmpeg.exe veya mpThree/bin/ffmpeg.exe
+
+# 3. Uygulamayı başlatın
 python app.py
 ```
-
-> **Not:** Sisteminizde FFmpeg veya Node.js kurulu olmasa dahi `imageio-ffmpeg` ve `nodejs-wheel-binaries` paketleri sayesinde dönüşümler sorunsuz çalışır.
 
 ---
 
